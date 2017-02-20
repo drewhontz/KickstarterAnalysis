@@ -29,75 +29,119 @@ ks$end.time = as_date(ks$end.time)
 
 start_time = week(as_date("2016-10-29"))
 ks$weeks.until.end = week(ks$end.time) - start_time
+ks$weeks.until.end <- factor(ks$weeks.until.end, levels = seq(8,0))
+
+ggplot<- function(...) ggplot2::ggplot(...) + scale_color_brewer(palette="Spectral")
+def <- "#6699FF"
+color <- "black"
 ```
 
 # Univariate Plots Section
+
+
 ```{r echo=FALSE, Distribution_of_Percentage_Funded, warning=FALSE}
 percent_funded_adjusted = quantile(ks$percentage.funded, 0.95)
 
 ggplot(ks, aes(x = percentage.funded)) +
-  geom_histogram(binwidth = 5) +
+  geom_histogram(binwidth = 5, fill=def, color="black") +
   scale_x_continuous(breaks = seq(0, percent_funded_adjusted, 20), limits=c(0, percent_funded_adjusted)) +
   ylim(0, 400) + 
-  labs(title="Distribution of Percentage Funded")
+  labs(title="Distribution of Percentage Funded") +
+  xlab("Percentage Funded (%)")
 
 summary(ks$percentage.funded)
 ```
+I first want to look at how many of our 4,000 projects have met or exceeded their
+funding goals. As we can see, the mode occurs somewhere in our 0-5% bucket and the
+median funded project is 18%. The average is much higher because we have extremely
+skewed data due to some projects vastly exceeding 100% funding.
+
 ```{r echo=FALSE, Endtime, warning=FALSE}
 ggplot(ks, aes(x=end.time)) +
-  geom_histogram(bins=60) +
+  geom_histogram(bins=60, fill=def, color="black") +
   scale_x_date(date_breaks = "2 weeks") +
   labs(title="Distribution of End Times")
 ```
+
+Of these 4,000 live projects, how long will they be available on Kickstarter? It
+looks like at this given time, projects end within the next month (this data was
+pulled on Oct. 29th). I wonder if the approaching holiday season had any influence
+here...
 
 ```{r echo=FALSE, Amount_Pledged_No_Outliers, warning=FALSE}
 amt_pledged_adjusted = quantile(ks$amt.pledged, 0.90)
 
 ggplot(ks, aes(x = amt.pledged)) +
-  geom_histogram(binwidth = 100) +
+  geom_histogram(binwidth = 100, fill=def, color="black") +
   scale_x_continuous(breaks=seq(0, amt_pledged_adjusted, 2000),limits = c(0, amt_pledged_adjusted)) + 
   ylim(0, 100) +
-  labs(title="Distribution of Amount Pledged")
+  labs(title="Distribution of Amount Pledged") +
+  xlab("Amount Pledged ($)")
+
+summary(ks$amt.pledged)
 ```
+
+I was wondering how much funding these projects typically get, it looks like if you
+only need $1,000 to get your idea started, Kickstarter might be an appropriate
+platform.
 
 ```{r echo=FALSE, Amount_Pledged, warning=FALSE}
 ggplot(ks, aes(x = amt.pledged)) +
-  geom_histogram(binwidth = .1) +
+  geom_histogram(binwidth = .1, fill=def, color="black") +
   scale_x_log10() + 
   labs(title="Distribution of Amount Pledged, with Log10 Scale")
 
 summary(ks$amt.pledged)
 ```
 
-```{r echo=FALSE, warning=FALSE, Distribution_of_Title_Length}
+Since the skew was so extreme on the last plot (I limited our x axis quite a bit)
+I thought I would adjust the axis by log10 to get a better look at our distribution.
 
+```{r echo=FALSE, warning=FALSE, Distribution_of_Title_Length}
 ggplot(ks, aes(x = title.length)) +
-  geom_histogram(binwidth = 1) +
+  geom_histogram(binwidth = 1, fill=def, color="black") +
   scale_x_continuous(breaks=seq(0, max(ks$title.length), 5)) +
-  labs(title="Distribution of Title Length")
+  labs(title="Distribution of Title Length") +
+  xlab("Title Length in Characters")
+
+summary(ks$title.length)
 ```
+I wanted to see how long the average title was, is brevity key or do you want to 
+use all space allotted to hook 'investors'? It looks like users typically use 
+around 20 or 50 characters as our distribution is somewhat bimodal.
 
 ```{r echo=FALSE, warning=FALSE, Distribution_of_Blurb_Length}
 
 ggplot(ks, aes(x = blurb.length)) +
-  geom_histogram(binwidth = 1) +
+  geom_histogram(binwidth = 1, fill=def, color="black") +
   scale_x_continuous(breaks=seq(0, max(ks$blurb.length), 10)) +
-  labs(title="Distribution of Blurb Length")
+  labs(title="Distribution of Blurb Length") +
+  xlab("Blurb length (# of Characters)")
 ```
+While users may not use their entire title field, they are certainly taking 
+advantage of the blurb! As we can see here, short blurbs are not very common.
 
 ```{r echo=FALSE, warning=FALSE, Distribution_Location_Type}
 ggplot(ks, aes(x = type)) +
-  geom_histogram(binwidth = 1, stat="count") +
-  scale_y_log10() +
-  labs(title="Distribution of Location Type")
+  geom_histogram(binwidth = 1, stat="count", fill=def, color="black") +
+  scale_y_log10(breaks = 10^(0:3)) +
+  labs(title="Distribution of Location Type") +
+  xlab("Location Type")
 ```
+
+The distibution of locations was strongly in favor of the 'Town' value, again I had
+to use logarithmic scaling to represent the huge range of values.
 
 ```{r echo=FALSE, warning=FALSE, Distribution_Currency}
 ggplot(ks, aes(x = currency)) +
-  geom_histogram(binwidth = 1, stat="count") +
-  scale_y_log10() +
+  geom_histogram(binwidth = 1, stat="count", fill=def, color="black") +
+  scale_y_log10(breaks = 10^(0:3)) +
   labs(title="Distribution of Currency Type")
 ```
+
+We have a lot of currency option but it looks like Kickstarter is mostly popular
+with Australia, US, CA, UK, and the EU. In the future, we will only want to use
+these currencies.
 
 ```{r echo=FALSE, warning=FALSE, Country_Distribution}
 top_countries <- table(ks$country)
@@ -105,11 +149,14 @@ top_countries <- as.data.frame(top_countries)
 top_countries <- subset(top_countries, Freq > 3)
 
 ggplot(subset(ks, country %in% top_countries$Var1), aes(x=country)) +
-  geom_histogram(stat="count") +
-  scale_y_log10() +
-  labs(title="Distribution of Item Counts by Country, Log10 Scale on Y Axis")
+  geom_histogram(stat="count", fill=def, color="black") +
+  scale_y_log10(breaks= 10^(0:3)) +
+  labs(title="Distribution of Item Counts by Country")
 
 ```
+It looks like our currency distributions match up with our items by country. Not
+much Kickstarter usage in Asian countries.
+
 
 # Univariate Analysis
 
@@ -117,23 +164,11 @@ ggplot(subset(ks, country %in% top_countries$Var1), aes(x=country)) +
 
 The dataframe is shaped 4000x13
 
-Columns consist of the following
+Columns consist of the following types and values
 
-* amt.pledged: amount pledged (float)
-* blurb: project blurb (string)
-* by: project creator (string)
-* country: abbreviated country code (string of length 2)
-* currency: currency type of amt.pledged (string of length 3)
-* end.time: campaign end time (string "YYYY-MM-DDThh:mm:ss-TZD")
-* location: mostly city (string)
-* pecentage.funded: unit % (int)
-* state: mostly US states (string of length 2) and others (string)
-* title: project title (string)
-* type: type of location (string: County/Island/LocalAdmin/Suburb/Town/Zip)
-* url: project url after domain (string)
-* title.length: length of title in characters
-* blurb.length: length of blurb in characters
-* weeks.until.end: count of weeks left until the end date
+```{r echo=FALSE, warning=FALSE, STR_OUT}
+str(ks)
+```
 
 ### What is/are the main feature(s) of interest in your dataset?
 
@@ -163,86 +198,135 @@ country was also mostly US. All of these plots' y-axis have been adjust by log10
 ```{r echo=FALSE, warning=FALSE, Title.length_vs_Blurb.length}
 ggplot(ks, aes(x=title.length, y=blurb.length)) +
   geom_jitter(alpha=0.5) +
-  labs(title="Comparing Title and Blurb Lengths")
+  scale_x_continuous(breaks=seq(0, 60, 10)) +
+  scale_y_continuous(breaks=seq(0, 150, 20)) + 
+  labs(title="Comparing Title and Blurb Lengths") +
+  ylab("Blurb Length in Characters") +
+  xlab("Title Length in Characters")
 ```
+
+I wanted to visualize our text based columns relationship here, we already saw that
+users are typically using the whole blurb field but not always the full title space,
+here we can see that by the density of points at the top of the chart.
+
+In the next few plots you will see me plot our text fields (blurb, title) character
+lengths against our features of interest (amount pledged, percentage pledged). 
+I was really hoping to see more of a relationship between the variables I created
+and our features of interest but there does not appear to be much there.
 
 ```{r echo=FALSE, warning=FALSE, Title_Amt}
 ggplot(ks, aes(x=title.length, y=amt.pledged)) +
   geom_jitter(alpha=0.5) +
-  labs(title="Comparing Title Lengths and Amt Pledged")
+  ylim(0, 450000) +
+  scale_x_continuous(breaks=seq(0, 60, 10)) +
+  labs(title="Comparing Title Lengths and Amt Pledged") +
+  xlab("Title Length in Characters") +
+  ylab("Amount Pledged in $")
 ```
+
 
 ```{r echo=FALSE, warning=FALSE, Title_Percent}
 ggplot(ks, aes(x=title.length, y=percentage.funded)) +
   geom_jitter(alpha=0.5) +
-  labs(title="Comparing Title Lengths and Percentage Funded")
+  ylim(0, 1000) +
+  scale_x_continuous(breaks=seq(0, 60, 10)) +
+  labs(title="Comparing Title Lengths and Percentage Funded") +
+  ylab("Percentage Funded %") +
+  xlab("Title Length in Characters")
 ```
 
 ```{r echo=FALSE, warning=FALSE, Blurb_Amt}
 ggplot(ks, aes(x=blurb.length, y=amt.pledged)) +
   geom_jitter(alpha=0.5) +
-  labs(title="Comparing Blurb Lengths and Amt Pledged")
+  ylim(0, 400000) +
+  scale_x_continuous(breaks=seq(0, 150, 20)) +
+  labs(title="Comparing Blurb Lengths and Amt Pledged") +
+  xlab("Blurb Length in Characters") +
+  ylab("Amount Pledged in $")
 ```
 
 ```{r echo=FALSE, warning=FALSE, Blurb_Percent}
 ggplot(ks, aes(x=blurb.length, y=percentage.funded)) +
   geom_jitter(alpha=0.5) +
-  labs(title="Comparing Blurb Lengths and Percentage Funded")
+  ylim(0, 250) +
+  scale_x_continuous(breaks=seq(0, 150, 20)) +
+  labs(title="Comparing Blurb Lengths and Percentage Funded") +
+  ylab("Percentage Funded %") +
+  xlab("Blurb Length in Characters")
 ```
 
-```{r echo=FALSE, warning=FALSE, Amt_Percent}
-ggplot(ks, aes(x=amt.pledged, y=percentage.funded)) +
-  geom_jitter(alpha=0.5) +
-  labs(title="Comparing Amount Pledged vs Percent Funded")
-```
 
 ```{r echo=FALSE, Amt_Percent_Clean}
 ggplot(ks, aes(x=amt.pledged, y=percentage.funded)) +
   geom_point(alpha=0.5) +
-  coord_cartesian(xlim=c(0,450000), ylim=c(0, 5000)) +
-  labs(title="Comparing Amount Pledged vs Percent Funded, Enhanced")
+  coord_cartesian(xlim=c(0,50000), ylim=c(0, 250)) +
+  labs(title="Comparing Amount Pledged vs Percent Funded") +
+  xlab("Amount Pledged $") +
+  ylab("Percentage Funded %")
 ```
+
+Here we are looking at our 2 features of interest plotted against eachother.
+It looks like most our projects under 50% funding receive less than $5,000, but
+several projects need less than $5,000 to even meet their funding goals so we some
+density following the y-axis up.
 
 ```{r echo=FALSE, warning=FALSE, PercentFunded_Endtime}
 ggplot(ks, aes(x=end.time, y=percentage.funded)) +
   geom_jitter(alpha=0.5) +
-  labs(title="Percentage Funded By End Time", x="Date")
+  ylim(0, 250) +
+  labs(title="Percentage Funded By End Time", x="Date") +
+  ylab("Percentage Funded %")
 
 ```
 
-```{r echo=FALSE, warning=FALSE, Pct_Complete_by_week}
+In the plot above I wanted to see the trend between percentage funded and end time.
+As we can see, projects with later end time have lower percentages of funding as
+they likely have not been on Kickstarter as long as those with early November end
+times.
 
+
+```{r echo=FALSE, warning=FALSE, Pct_Complete_by_week}
 ggplot(ks, aes(x=percentage.funded)) +
-  geom_histogram(binwidth=5) +
+  geom_histogram(binwidth=5, fill=def, color="black") +
   scale_x_continuous(breaks=seq(0, 300, 50), limits = c(0, 300)) +
   ylim(0, 25) +
   facet_wrap(~weeks.until.end) +
-  labs(title="Percentage Funded by Weeks Until End")
-
+  labs(title="Percentage Funded by Weeks Until End") +
+  xlab("Percentage Funded %")
 ```
 
-```{r echo=FALSE, warning=FALSE, Amt_pledged_by_week}
+Here is that same distribution cut by week. In Week 1, it looks like we get a surge
+of projects funded under 50%. I suspect these are likely joke products or quick 
+fundraisers as there aren't nearly as many under funded projects in the previous
+week.
 
+
+```{r echo=FALSE, warning=FALSE, Amt_pledged_by_week}
 ggplot(ks, aes(x=amt.pledged)) +
-  geom_histogram(binwidth=2000) +
+  geom_histogram(binwidth=2000, fill=def, color="black") +
   scale_x_continuous(breaks=seq(0, 100000, 25000), limits = c(0, 100000)) +
   ylim(0, 25) +
   facet_wrap(~weeks.until.end) +
-  labs(title="Amt Pledged by Weeks Until End")
-
+  labs(title="Amt Pledged by Weeks Until End") +
+  xlab("Amount Pledged $")
 ```
 
 
 ```{r echo=FALSE, warning=FALSE, Distribution_Pct_Funded}
-ggplot(ks, aes(x = amt.pledged)) +
-  geom_histogram(binwidth = 1000) +
-  scale_x_continuous(breaks=seq(0, 25000, 10000), limits=c(0, 25000)) +
+
+interesting.currency <- subset(ks, ks$currency %in% c("aud", "cad", "usd", "eur","gdp"))
+
+ggplot(interesting.currency, aes(x = amt.pledged)) +
+  geom_histogram(binwidth = 1000, fill=def, color="black") +
+  scale_x_continuous(breaks=seq(0, 25000, 5000), limits=c(0, 25000)) +
   facet_wrap(~currency, scales = "free_y")
 ```
 
+It looks like most projects are receiving fewer than $5,000 in each of the Kickstarter
+markets, with the US being the largest.
 
 ```{r echo=FALSE, warning=FALSE, Correlation}
-cor(subset(ks, select = c(title.length, blurb.length, percentage.funded, amt.pledged, weeks.until.end)))
+cor(subset(ks, select = c(title.length, blurb.length, percentage.funded, amt.pledged)))
 ```
 
 # Bivariate Analysis
@@ -274,38 +358,64 @@ Funded.
 # Multivariate Plots Section
 
 ```{r echo=FALSE, warning=FALSE, Title_Blurb_Currency}
-ggplot(ks, aes(x=title.length, y=blurb.length)) +
+ggplot(interesting.currency, aes(x=title.length, y=blurb.length)) +
   geom_jitter(aes(color=currency)) +
-  labs(title="Comparing Title and Blurb Lengths by Currency Used")
+  labs(title="Comparing Title and Blurb Lengths by Currency Used") +
+  xlab("Title Length in Characters") + ylab("Blurb Length in Characters")
 ```
-
+I was looking for clusters here to see if different currencies had a relationship
+with blurb and title length. I.E. Are users in the European market more brief in their
+blurb descriptions, etc. But there was nothing to be found aside from a reminder
+that Kickstarter has a disproportionately large US user base.
 
 ```{r echo=FALSE, warning=FALSE, Amt_Per_currency}
-ggplot(ks, aes(x=amt.pledged, y=percentage.funded)) +
+ggplot(interesting.currency, aes(x=amt.pledged, y=percentage.funded)) +
   geom_point(aes(color=currency)) +
-  coord_cartesian(xlim=c(0,450000), ylim=c(0, 5000)) +
-  labs(title="Comparing Amount Pledged and Percent Funded by currency")
+  coord_cartesian(xlim=c(0,50000), ylim=c(0, 250)) +
+  labs(title="Comparing Amount Pledged and Percent Funded by Currency") +
+  xlab("Amount Pledged $") +
+  ylab("Percentage Funded %")
+  
 ```
+Now I am comparing currency with our main features to look for any relationships;
+none to be found.
 
 ```{r echo=FALSE, warning=FALSE, Blurb_Per_Cur}
-ggplot(ks, aes(x=blurb.length, y=percentage.funded)) +
+ggplot(interesting.currency, aes(x=blurb.length, y=percentage.funded)) +
   geom_point(aes(color=currency)) +
-  labs(title="Comparing Blurb Length and Percent Funded by Currency")
+  scale_x_continuous(breaks=seq(0, 150, 25)) +
+  ylim(0, 250) +
+  labs(title="Comparing Blurb Length and Percent Funded by Currency") +
+  xlab("Blurb Length in Characters") +
+  ylab("Percentage Funded %")
 ```
 
+There does not appear to be any relationship between currency and our Blurb vs
+Percent Funded plot.
+
 ```{r echo=FALSE, warning=FALSE, Amt_Title_Currency}
-ggplot(ks, aes(x=title.length, y=amt.pledged)) +
+ggplot(interesting.currency, aes(x=title.length, y=amt.pledged)) +
   geom_jitter(aes(color=currency)) +
-  labs(title="Comparing Title Length and Percent Funded by Currency")
+  scale_y_continuous(breaks=seq(0,100000, 25000), limits = c(0, 100000)) +
+  scale_x_continuous(breaks=seq(0, 60, 10)) +
+  labs(title="Comparing Title Length and Percent Funded by Currency") +
+  ylab("Amount Pledged in $") + xlab("Title Length in Words")
 ```
+
+Again, looking for relationships with currency but I guess we can conclude that
+users of differenty currency use Kickstarter similarly.
 
 ```{r echo=FALSE, warning=FALSE, Amt_pledge_week}
 ggplot(ks, aes(x=amt.pledged, y=percentage.funded)) +
   geom_point(aes(color=weeks.until.end)) +
   coord_cartesian(xlim=c(0,25000), ylim=c(0, 300)) +
-  labs(title="Comparing Amount Pledged and Percent Funded by Weeks Until End")
+  labs(title="Comparing Amount Pledged and Percent Funded by Weeks Until End") +
+  xlab("Amount Pledged $") +
+  ylab("Percentage Funded %")
 ```
-
+I like this plot, we can clearly see that as you move 'out' toward higher funded
+projects, the end time is closer than our under funded projects. This is really
+intuitive but it is neat to see visualized.
 
 # Multivariate Analysis
 
@@ -326,7 +436,6 @@ periods are coming to a close.
 To dig further into this question I would have to dive a little deeper into the 
 contents of the blurb or title and look for associations between keywords and amt funded or pledged.
 
-
 ------
 
 # Final Plots and Summary
@@ -334,10 +443,11 @@ contents of the blurb or title and look for associations between keywords and am
 ### Plot One
 ```{r echo=FALSE, warning=FALSE, Plot_One}
 ggplot(ks, aes(x = percentage.funded)) +
-  geom_histogram(binwidth = 5) +
+  geom_histogram(binwidth = 5, fill=def, color="black") +
   scale_x_continuous(breaks=seq(0, 300, 20), limits = c(0, 300)) +
   ylim(0, 400) + 
-  labs(title="Distribution of Percentage Funded")
+  labs(title="Distribution of Percentage Funded") +
+  xlab("Percentage Funded %")
 
 summary(ks$percentage.funded)
 ```
@@ -355,11 +465,12 @@ on Kickstarter with a month left until end time, is 18% funded.
 ### Plot Two
 ```{r echo=FALSE, warning=FALSE, Plot_Two}
 ggplot(ks, aes(x=percentage.funded)) +
-  geom_histogram(binwidth = 10) +
+  geom_histogram(binwidth = 10, fill=def, color="black") +
   scale_x_continuous(breaks=seq(0, 300, 50), limits = c(0, 300)) +
   ylim(0, 25) +
-  facet_wrap(~weeks.until.end) +
-  labs(title="Percentage Funded by Weeks Until End")
+  facet_wrap(~ weeks.until.end) +
+  labs(title="Percentage Funded by Weeks Until End") +
+  xlab("Percentage Funded %")
 ```
 
 ### Description Two
@@ -376,16 +487,20 @@ posted the item as a joke and chose an endtime < 7 days out.
 
 ### Plot Three
 ```{r echo=FALSE, warning=FALSE, Plot_Three}
-ggplot(ks, aes(x=title.length, y=blurb.length)) +
-  geom_jitter(aes(color=currency)) +
-  labs(title="Comparing Title and Blurb Lengths by Currency Used")
+ggplot(ks, aes(x=amt.pledged, y=percentage.funded)) +
+  geom_point(aes(color=weeks.until.end)) +
+  coord_cartesian(xlim=c(0,25000), ylim=c(0, 300)) +
+  labs(title="Comparing Amount Pledged and Percent Funded by Weeks Until End") +
+  xlab("Amount Pledged $") +
+  ylab("Percentage Funded %")
 ```
 
 ### Description Three
 
-In plot 3, I was looking to show if Kickstarter's of different countries (and in some cases,languages)
-treat their title and blurb sections differently. It appears that no matter the location
-Kickstarter's are taking full advantage of their blurb capacity!
+In plot 3, I wanted to show the relationship between well funded projects and 
+the duration (in weeks) remaining until their end time. What we found is not so
+shocking, that as you increase funding percentage and total amount pledged, you
+generally approached projects with fewer weeks until their end times.
 
 ------
 
@@ -393,6 +508,20 @@ Kickstarter's are taking full advantage of their blurb capacity!
 
 Overall this was a fun project, I feel like I have some insight in the world of 
 Kickstarter now.
+
+### Successes and Failures
+
+Successes, I was able to get a sense on
+* the nationality of the Kickstarter userbase
+* how long projects typically last
+* % of projects that meet their funding goals
+* Amounts pledged to a project
+
+Failures, I was not able to
+* Determine the types of products on kickstarter
+* Find any correlation between our variables and meeting funding goals
+* Find differences in user usage of Kickstarter by currency
+
 
 ### What we learned
 
