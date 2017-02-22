@@ -52,7 +52,11 @@ ggplot(ks, aes(x = percentage.funded)) +
 summary(ks$percentage.funded)
 ```
 I first want to look at how many of our 4,000 projects have met or exceeded their
-funding goals. As we can see, the mode occurs somewhere in our 0-5% bucket and the
+funding goals so I plotted a histogram of our percentage funded variable, a variable
+that explains what percentage the project is funded in relation to its fundraising 
+goals (ex: If I need $100 to print a cool sticker design and users have pledged $50, I am 50% funded)
+
+As we can see, the mode occurs somewhere in our 0-5% bucket and the
 median funded project is 18%. The average is much higher because we have extremely
 skewed data due to some projects vastly exceeding 100% funding.
 
@@ -63,10 +67,11 @@ ggplot(ks, aes(x=end.time)) +
   labs(title="Distribution of End Times")
 ```
 
-Of these 4,000 live projects, how long will they be available on Kickstarter? It
-looks like at this given time, projects end within the next month (this data was
-pulled on Oct. 29th). I wonder if the approaching holiday season had any influence
-here...
+Of these 4,000 live projects, how long will they be available on Kickstarter? TO
+answer this, I took a look at the end.time variable which has the date the project
+will be removed from Kickstarter. It looks like at this given time, projects end
+within the next month (this data was pulled on Oct. 29th). I wonder if the 
+approaching holiday season had any influence here...
 
 ```{r echo=FALSE, Amount_Pledged_No_Outliers, warning=FALSE}
 amt_pledged_adjusted = quantile(ks$amt.pledged, 0.90)
@@ -81,9 +86,10 @@ ggplot(ks, aes(x = amt.pledged)) +
 summary(ks$amt.pledged)
 ```
 
-I was wondering how much funding these projects typically get, it looks like if you
-only need $1,000 to get your idea started, Kickstarter might be an appropriate
-platform.
+I was wondering how much funding these projects typically get so I plotted a histogram
+of amounts pledged, the total amount of funding the project has at a given time. 
+It looks like if you only need $1,000 to get your idea started, Kickstarter 
+might be an appropriate platform.
 
 ```{r echo=FALSE, Amount_Pledged, warning=FALSE}
 ggplot(ks, aes(x = amt.pledged)) +
@@ -169,6 +175,25 @@ Columns consist of the following types and values
 ```{r echo=FALSE, warning=FALSE, STR_OUT}
 str(ks)
 ```
+
+X is our index in the dataset
+amt.pledged is the total amount of funding the project has at that time
+blurb is a text field that describes the project being funded
+by is the field containing the username of the user asking for funding
+country is the user's country
+currency is the user's native currency
+end.time is the date the project will be closed for additional funding
+location is string field for the users city, town, state, or really any location text
+percentage.funded is the percentage describing amt pledged / amt needed 
+state is the state or province the user is located in
+title is the name of the project being funded
+type is the location type with discrete values, town, island, county, etc
+url is the link to the project on Kickstarter.com
+title.length is a feature I engineered that has the length of the title in terms of character count.
+blurb.length is another engineering feature that has the length of the blurb in terms of character count.
+weeks.until.end is my final engineered feature that is the number of weeks until
+  the project's funding period has ended. A value of 0 indicates this current week.
+
 
 ### What is/are the main feature(s) of interest in your dataset?
 
@@ -485,10 +510,11 @@ that are funded below the 50% mark (whereas most projects with 1 week left are a
 past the 50% mark). My guess is the user who created the posting was confused or
 posted the item as a joke and chose an endtime < 7 days out.
 
+
 ### Plot Three
 ```{r echo=FALSE, warning=FALSE, Plot_Three}
 ggplot(ks, aes(x=amt.pledged, y=percentage.funded)) +
-  geom_point(aes(color=weeks.until.end)) +
+  geom_point(aes(color=weeks.until.end))+
   coord_cartesian(xlim=c(0,25000), ylim=c(0, 300)) +
   labs(title="Comparing Amount Pledged and Percent Funded by Weeks Until End") +
   xlab("Amount Pledged $") +
@@ -497,10 +523,34 @@ ggplot(ks, aes(x=amt.pledged, y=percentage.funded)) +
 
 ### Description Three
 
-In plot 3, I wanted to show the relationship between well funded projects and 
-the duration (in weeks) remaining until their end time. What we found is not so
-shocking, that as you increase funding percentage and total amount pledged, you
-generally approached projects with fewer weeks until their end times.
+For plot 3 I wanted to visualize project funding in relation to how soon the project
+ends.
+
+I decided to use both percentage funded and amount pledged as variables describing
+a well funded project and weeks.until.end as our measure for how soon the projects
+are ending.
+
+Since there is little correlation between any of our variables, this plot may be 
+slightly confusing, but the point I am trying to convey is quite simple; the less
+time a project has until it ends, the closer the project will be to meeting or 
+exceeding its funding goals. The same rule applies to the amount pledged.
+
+To reiterate, answer the following question: when would you expect a project to 
+be more well funded; the day it is posted on Kickstarter or 3 weeks after it has
+been posted?
+
+The answer is almost in all cases 3 weeks after. The longer the project is available,
+the more likely you are to receive pledges from the greater Kickstarter audience.
+
+This is depicted in our visualization by any increase in the x or y axis. As you 
+increase along or axis you will notice gradual color change from yellow to blue.
+
+This is showing that as you look at points with more funding, or closer to their
+funding goals, you typically find that they have fewer weeks left on Kickstarter.
+
+It looks like projects under the 75% funding level are more likely to have 4 or more
+weeks remaining until the project ends, while projects that exceed this percentage
+funding level are often ending in fewer than 2 weeks.
 
 ------
 
@@ -519,7 +569,7 @@ Successes, I was able to get a sense on
 
 Failures, I was not able to
 * Determine the types of products on kickstarter
-* Find any correlation between our variables and meeting funding goals
+* Find any strong correlation between our variables and meeting funding goals
 * Find differences in user usage of Kickstarter by currency
 
 
